@@ -54,6 +54,8 @@
 #define DHCP_RETRY_COUNT 5
 #define DNS_RETRY_COUNT 5
 
+#define USER_LED_GPIO 19
+
 /**
  * ----------------------------------------------------------------------------------------------------
  * Variables
@@ -61,36 +63,46 @@
  */
 /* Network */
 static wiz_NetInfo g_net_info =
-    {
-        .mac = {0x00, 0x08, 0xDC, 0x12, 0x34, 0x56}, // MAC address
-        .ip = {192, 168, 11, 2},                     // IP address
-        .sn = {255, 255, 255, 0},                    // Subnet Mask
-        .gw = {192, 168, 11, 1},                     // Gateway
-        .dns = {8, 8, 8, 8},                         // DNS server
+{
+    .mac = {0x00, 0x08, 0xDC, 0x12, 0x34, 0x56}, // MAC address
+    .ip = {192, 168, 11, 2}, // IP address
+    .sn = {255, 255, 255, 0}, // Subnet Mask
+    .gw = {192, 168, 11, 1}, // Gateway
+    .dns = {8, 8, 8, 8}, // DNS server
 #if _WIZCHIP_ > W5500
-        .lla = {0xfe, 0x80, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-                0x02, 0x08, 0xdc, 0xff,
-                0xfe, 0x57, 0x57, 0x25},             // Link Local Address
-        .gua = {0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00},             // Global Unicast Address
-        .sn6 = {0xff, 0xff, 0xff, 0xff,
-                0xff, 0xff, 0xff, 0xff,
-                0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00},             // IPv6 Prefix
-        .gw6 = {0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00},             // Gateway IPv6 Address
-        .dns6 = {0x20, 0x01, 0x48, 0x60,
-                0x48, 0x60, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x88, 0x88},             // DNS6 server
-        .ipmode = NETINFO_DHCP_ALL,                // this 'ipmode' is never used in this project.  
+    .lla = {
+        0xfe, 0x80, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+        0x02, 0x08, 0xdc, 0xff,
+        0xfe, 0x57, 0x57, 0x25
+    }, // Link Local Address
+    .gua = {
+        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00
+    }, // Global Unicast Address
+    .sn6 = {
+        0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff,
+        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00
+    }, // IPv6 Prefix
+    .gw6 = {
+        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00
+    }, // Gateway IPv6 Address
+    .dns6 = {
+        0x20, 0x01, 0x48, 0x60,
+        0x48, 0x60, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x88, 0x88
+    }, // DNS6 server
+    .ipmode = NETINFO_DHCP_ALL, // this 'ipmode' is never used in this project.
 #endif
-        .dhcp = NETINFO_DHCP  
+    .dhcp = NETINFO_DHCP
 };
 static uint8_t g_ethernet_buf[ETHERNET_BUF_MAX_SIZE] = {
     0,
@@ -118,8 +130,8 @@ static volatile uint32_t g_msec_cnt = 0;
  * ----------------------------------------------------------------------------------------------------
  */
 /* Task */
-void dhcp_task(void *argument);
-void dns_task(void *argument);
+void dhcp_task(void* argument);
+void dns_task(void* argument);
 
 /* Clock */
 static void set_clock_khz(void);
@@ -131,6 +143,26 @@ static void wizchip_dhcp_conflict(void);
 
 /* Timer  */
 static void repeating_timer_callback(void);
+
+
+static void blinker_task(void* param)
+{
+    (void)param;
+
+    gpio_init(USER_LED_GPIO);
+    gpio_set_dir(USER_LED_GPIO, GPIO_OUT);
+
+    bool led_on = false;
+
+    while (true)
+    {
+        led_on = !led_on;
+        gpio_put(USER_LED_GPIO, led_on);
+        printf("LED %s\n", led_on ? "ON" : "OFF");
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
+}
+
 
 /**
  * ----------------------------------------------------------------------------------------------------
@@ -156,14 +188,13 @@ int main()
 
     xTaskCreate(dhcp_task, "DHCP_Task", DHCP_TASK_STACK_SIZE, NULL, DHCP_TASK_PRIORITY, NULL);
     xTaskCreate(dns_task, "DNS_Task", DNS_TASK_STACK_SIZE, NULL, DNS_TASK_PRIORITY, NULL);
-
+    xTaskCreate(blinker_task, "blinker", 256, NULL, 1, NULL);
     dns_sem = xSemaphoreCreateCounting((unsigned portBASE_TYPE)0x7fffffff, (unsigned portBASE_TYPE)0);
 
     vTaskStartScheduler();
 
     while (1)
     {
-        ;
     }
 }
 
@@ -173,7 +204,7 @@ int main()
  * ----------------------------------------------------------------------------------------------------
  */
 /* Task */
-void dhcp_task(void *argument)
+void dhcp_task(void* argument)
 {
     int retval = 0;
     uint8_t link;
@@ -266,7 +297,7 @@ void dhcp_task(void *argument)
     }
 }
 
-void dns_task(void *argument)
+void dns_task(void* argument)
 {
     uint8_t dns_retry;
 
@@ -283,7 +314,8 @@ void dns_task(void *argument)
             {
                 printf(" DNS success\n");
                 printf(" Target domain : %s\n", g_dns_target_domain);
-                printf(" IP of target domain : %d.%d.%d.%d\n", g_dns_target_ip[0], g_dns_target_ip[1], g_dns_target_ip[2], g_dns_target_ip[3]);
+                printf(" IP of target domain : %d.%d.%d.%d\n", g_dns_target_ip[0], g_dns_target_ip[1],
+                       g_dns_target_ip[2], g_dns_target_ip[3]);
 
                 break;
             }
@@ -318,10 +350,10 @@ static void set_clock_khz(void)
     // configure the specified clock
     clock_configure(
         clk_peri,
-        0,                                                // No glitchless mux
+        0, // No glitchless mux
         CLOCKS_CLK_PERI_CTRL_AUXSRC_VALUE_CLKSRC_PLL_SYS, // System PLL on AUX mux
-        PLL_SYS_KHZ * 1000,                               // Input frequency
-        PLL_SYS_KHZ * 1000                                // Output (must be same as no divider)
+        PLL_SYS_KHZ * 1000, // Input frequency
+        PLL_SYS_KHZ * 1000 // Output (must be same as no divider)
     );
 }
 
