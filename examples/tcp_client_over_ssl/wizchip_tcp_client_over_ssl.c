@@ -63,7 +63,7 @@
  * ----------------------------------------------------------------------------------------------------
  */
 /* Network */
-static wiz_NetInfo g_net_info =
+static wiz_NetInfo network_information =
     {
         .mac = {0x00, 0x08, 0xDC, 0x12, 0x34, 0x56}, // MAC address
         .ip = {192, 168, 11, 2},                     // IP address
@@ -167,10 +167,10 @@ int main()
 
     wizchip_gpio_interrupt_initialize(SOCKET_SSL, gpio_callback);
 
-    network_initialize(g_net_info);
+    network_initialize(network_information);
 
     /* Get network information */
-    print_network_information(g_net_info);
+    print_network_information(network_information);
 
     xTaskCreate(tcp_task, "TCP_Task", TCP_TASK_STACK_SIZE, NULL, TCP_TASK_PRIORITY, NULL);
     xTaskCreate(recv_task, "RECV_Task", RECV_TASK_STACK_SIZE, NULL, RECV_TASK_PRIORITY, NULL);
@@ -199,10 +199,10 @@ void tcp_task(void *argument)
     uint32_t start_ms = 0;
     uint32_t send_cnt = 0;
 
-    network_initialize(g_net_info);
+    network_initialize(network_information);
 
     /* Get network information */
-    print_network_information(g_net_info);
+    print_network_information(network_information);
 
     retval = wizchip_ssl_init((void *)SOCKET_SSL);
 

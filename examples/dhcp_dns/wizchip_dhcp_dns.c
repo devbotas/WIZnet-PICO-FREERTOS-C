@@ -137,31 +137,12 @@ void dns_task(void* argument);
 static void set_clock_khz(void);
 
 /* DHCP */
-static void wizchip_dhcp_init(void);
-static void wizchip_dhcp_assign(void);
-static void wizchip_dhcp_conflict(void);
+static void initialize_dhcp(void);
+static void assign_ip_from_dhcp(void);
+static void resolve_dhcp_conflict(void);
 
 /* Timer  */
 static void repeating_timer_callback(void);
-
-
-static void blinker_task(void* param)
-{
-    (void)param;
-
-    gpio_init(USER_LED_GPIO);
-    gpio_set_dir(USER_LED_GPIO, GPIO_OUT);
-
-    bool led_on = false;
-
-    while (true)
-    {
-        led_on = !led_on;
-        gpio_put(USER_LED_GPIO, led_on);
-        printf("LED %s\n", led_on ? "ON" : "OFF");
-        vTaskDelay(pdMS_TO_TICKS(500));
-    }
-}
 
 
 /**
@@ -188,7 +169,6 @@ int main()
 
     xTaskCreate(dhcp_task, "DHCP_Task", DHCP_TASK_STACK_SIZE, NULL, DHCP_TASK_PRIORITY, NULL);
     xTaskCreate(dns_task, "DNS_Task", DNS_TASK_STACK_SIZE, NULL, DNS_TASK_PRIORITY, NULL);
-    xTaskCreate(blinker_task, "blinker", 256, NULL, 1, NULL);
     dns_sem = xSemaphoreCreateCounting((unsigned portBASE_TYPE)0x7fffffff, (unsigned portBASE_TYPE)0);
 
     vTaskStartScheduler();
@@ -213,7 +193,7 @@ void dhcp_task(void* argument)
 
     if (g_net_info.dhcp == NETINFO_DHCP) // DHCP
     {
-        wizchip_dhcp_init();
+        initialize_dhcp();
     }
     else // static
     {
@@ -244,7 +224,7 @@ void dhcp_task(void* argument)
 
                 if (link == PHY_LINK_ON)
                 {
-                    wizchip_dhcp_init();
+                    initialize_dhcp();
 
                     dhcp_retry = 0;
 
@@ -358,18 +338,18 @@ static void set_clock_khz(void)
 }
 
 /* DHCP */
-static void wizchip_dhcp_init(void)
+static void initialize_dhcp(void)
 {
     printf(" DHCP client running\n");
 
     DHCP_init(SOCKET_DHCP, g_ethernet_buf);
 
-    reg_dhcp_cbfunc(wizchip_dhcp_assign, wizchip_dhcp_assign, wizchip_dhcp_conflict);
+    reg_dhcp_cbfunc(assign_ip_from_dhcp, assign_ip_from_dhcp, resolve_dhcp_conflict);
 
     g_dhcp_get_ip_flag = 0;
 }
 
-static void wizchip_dhcp_assign(void)
+static void assign_ip_from_dhcp(void)
 {
     getIPfromDHCP(g_net_info.ip);
     getGWfromDHCP(g_net_info.gw);
@@ -385,7 +365,7 @@ static void wizchip_dhcp_assign(void)
     printf(" DHCP leased time : %ld seconds\n", getDHCPLeasetime());
 }
 
-static void wizchip_dhcp_conflict(void)
+static void resolve_dhcp_conflict(void)
 {
     printf(" Conflict IP from DHCP\n");
 

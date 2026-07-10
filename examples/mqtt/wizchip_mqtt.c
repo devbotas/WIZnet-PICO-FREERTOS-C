@@ -69,7 +69,7 @@
  * ----------------------------------------------------------------------------------------------------
  */
 /* Network */
-static wiz_NetInfo g_net_info =
+static wiz_NetInfo network_information =
     {
         .mac = {0x00, 0x08, 0xDC, 0x12, 0x34, 0x56}, // MAC address
         .ip = {192, 168, 11, 2},                     // IP address
@@ -179,10 +179,10 @@ void mqtt_task(void *argument)
 {
     uint8_t retval;
 
-    network_initialize(g_net_info);
+    network_initialize(network_information);
 
     /* Get network information */
-    print_network_information(g_net_info);
+    print_network_information(network_information);
 
     NewNetwork(&g_mqtt_network, SOCKET_MQTT);
     retval = ConnectNetwork(&g_mqtt_network, g_mqtt_broker_ip, PORT_MQTT);
