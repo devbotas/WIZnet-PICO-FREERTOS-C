@@ -5,6 +5,7 @@
 #include <task.h>
 #include <stdio.h>
 #include "dhcp.h"
+#include "timer.h"
 
 int g_dhcp_get_ip_flag = 0; // <-- Consider converting this to semaphore
 xSemaphoreHandle dns_semaphore = NULL;
@@ -22,6 +23,20 @@ wiz_NetInfo network_information =
     .dns = {8, 8, 8, 8},
     .dhcp = NETINFO_DHCP
 };
+
+volatile uint32_t g_msec_cnt = 0;
+
+void network_init(void)
+{
+    wizchip_spi_initialize();
+    wizchip_cris_initialize();
+
+    wizchip_reset();
+    wizchip_initialize();
+    wizchip_check();
+
+    wizchip_1ms_timer_initialize(repeating_timer_callback);
+}
 
 void initialize_dhcp(void)
 {
@@ -61,6 +76,14 @@ void resolve_dhcp_conflict(void)
     }
 }
 
+void repeating_timer_callback(void)
+{
+    g_msec_cnt++;
 
+    if (g_msec_cnt >= 1000 - 1)
+    {
+        g_msec_cnt = 0;
 
-
+        DHCP_time_handler();
+    }
+}

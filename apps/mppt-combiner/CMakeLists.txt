@@ -7,6 +7,8 @@ add_executable(${TARGET_NAME}
         network-tasks.c
         blinker.h
         blinker.c
+        system.h
+        system.c
 )
 
 target_include_directories(${TARGET_NAME} PUBLIC
