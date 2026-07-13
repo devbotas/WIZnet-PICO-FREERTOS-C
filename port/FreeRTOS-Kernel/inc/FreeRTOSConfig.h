@@ -110,7 +110,7 @@
 
 /* FPU configuration for RP2350 - CRITICAL for floating point operations in tasks */
 #if (DEVICE_BOARD_NAME == W5100S_EVB_PICO2 || DEVICE_BOARD_NAME == W5500_EVB_PICO2 || \
-     DEVICE_BOARD_NAME == W6100_EVB_PICO2 || DEVICE_BOARD_NAME == W6300_EVB_PICO2)
+DEVICE_BOARD_NAME == W6100_EVB_PICO2 || DEVICE_BOARD_NAME == W6300_EVB_PICO2)
 #define configENABLE_FPU                        1
 #define configENABLE_TRUSTZONE                  0
 #define configRUN_FREERTOS_SECURE_ONLY          1

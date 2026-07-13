@@ -1,6 +1,6 @@
 #include "serial-pio.h"
 
-#include "network.h"
+#include "../network/network.h"
 #include "FreeRTOS.h"
 #include <semphr.h>
 #include <stdint.h>
