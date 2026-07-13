@@ -70,9 +70,6 @@ set(ENABLE_TESTING OFF CACHE BOOL "Build mbedtls testing")
 add_definitions(-DMBEDTLS_CONFIG_FILE="${PORT_DIR}/mbedtls/inc/ssl_config.h")
 add_definitions(-DSET_TRUSTED_CERT_IN_SAMPLES)
 
-# Hardware-specific examples in subdirectories:
-add_subdirectory(examples)
-
 # My practical apps
 add_subdirectory(apps)
 
