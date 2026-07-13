@@ -1,15 +1,15 @@
 #include "mppt.h"
-#include "helpers.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "../helpers/helpers.h"
+#include "helpers.h"
 #include "pico/time.h"
 
-#define MPPT_MAX_PAIRS     32
-#define MPPT_KEY_MAX_LEN   16
+#define MPPT_MAX_PAIRS 32
+#define MPPT_KEY_MAX_LEN 16
 #define MPPT_VALUE_MAX_LEN 64
 
 MpptData CurrentMpptData = {0};
@@ -29,29 +29,22 @@ static float toScaledFloat(const char* value, float scale);
 static const char* mapState(const char* cs);
 static void copyString(char* dest, size_t destSize, const char* src);
 
-static uint32_t millis(void)
-{
-    return to_ms_since_boot(get_absolute_time());
-}
+static uint32_t millis(void) { return to_ms_since_boot(get_absolute_time()); }
 
-void processLine(char* line)
-{
-    if (line == NULL)
-    {
+void processLine(char* line) {
+    if (line == NULL) {
         return;
     }
 
     strtrim(line);
-    
-    if (line[0] == '\0')
-    {
+
+    if (line[0] == '\0') {
         return;
     }
 
     char* tabPos = strchr(line, '\t');
 
-    if (tabPos == NULL)
-    {
+    if (tabPos == NULL) {
         return;
     }
 
@@ -62,18 +55,15 @@ void processLine(char* line)
 
     addPair(key, value);
 
-    if (strcmp(key, "Checksum") == 0)
-    {
+    if (strcmp(key, "Checksum") == 0) {
         commitFrame();
         resetFrame();
         is_charger_data_received = true;
     }
 }
 
-static void addPair(const char* key, const char* value)
-{
-    if (pairCount >= MPPT_MAX_PAIRS)
-    {
+static void addPair(const char* key, const char* value) {
+    if (pairCount >= MPPT_MAX_PAIRS) {
         return;
     }
 
@@ -83,26 +73,28 @@ static void addPair(const char* key, const char* value)
     pairCount++;
 }
 
-static void commitFrame(void)
-{
+static void commitFrame(void) {
     const char* fw = getValue("FW");
 
     CurrentMpptData.deviceInstance = 256;
 
-    copyString(CurrentMpptData.productId, sizeof(CurrentMpptData.productId), getValue("PID"));
+    copyString(CurrentMpptData.productId, sizeof(CurrentMpptData.productId),
+               getValue("PID"));
 
-    if (strlen(fw) >= 3)
-    {
-        snprintf(CurrentMpptData.firmwareVersion, sizeof(CurrentMpptData.firmwareVersion), "%c.%.2s", fw[0], fw + 1);
+    if (strlen(fw) >= 3) {
+        snprintf(CurrentMpptData.firmwareVersion,
+                 sizeof(CurrentMpptData.firmwareVersion), "%c.%.2s", fw[0], fw + 1);
     }
-    else
-    {
-        copyString(CurrentMpptData.firmwareVersion, sizeof(CurrentMpptData.firmwareVersion), fw);
+    else {
+        copyString(CurrentMpptData.firmwareVersion,
+                   sizeof(CurrentMpptData.firmwareVersion), fw);
     }
 
-    copyString(CurrentMpptData.serialNumber, sizeof(CurrentMpptData.serialNumber), getValue("SER#"));
+    copyString(CurrentMpptData.serialNumber, sizeof(CurrentMpptData.serialNumber),
+               getValue("SER#"));
 
-    copyString(CurrentMpptData.stateText, sizeof(CurrentMpptData.stateText), mapState(getValue("CS")));
+    copyString(CurrentMpptData.stateText, sizeof(CurrentMpptData.stateText),
+               mapState(getValue("CS")));
 
     CurrentMpptData.errorCode = toIntSafe(getValue("ERR"), 0);
     CurrentMpptData.batteryVoltageV = toScaledFloat(getValue("V"), 1000.0f);
@@ -120,12 +112,9 @@ static void commitFrame(void)
     CurrentMpptData.lastUpdateMs = millis();
 }
 
-static const char* getValue(const char* key)
-{
-    for (int i = 0; i < pairCount; i++)
-    {
-        if (strcmp(keys[i], key) == 0)
-        {
+static const char* getValue(const char* key) {
+    for (int i = 0; i < pairCount; i++) {
+        if (strcmp(keys[i], key) == 0) {
             return values[i];
         }
     }
@@ -133,56 +122,58 @@ static const char* getValue(const char* key)
     return "";
 }
 
-static void resetFrame(void)
-{
+static void resetFrame(void) {
     pairCount = 0;
 
     memset(keys, 0, sizeof(keys));
     memset(values, 0, sizeof(values));
 }
 
-static const char* mapState(const char* cs)
-{
-    if (strcmp(cs, "0") == 0) { return "Off"; }
-    if (strcmp(cs, "2") == 0) { return "Fault"; }
-    if (strcmp(cs, "3") == 0) { return "Bulk"; }
-    if (strcmp(cs, "4") == 0) { return "Absorption"; }
-    if (strcmp(cs, "5") == 0) { return "Float"; }
-    if (strcmp(cs, "7") == 0) { return "Equalize"; }
+static const char* mapState(const char* cs) {
+    if (strcmp(cs, "0") == 0) {
+        return "Off";
+    }
+    if (strcmp(cs, "2") == 0) {
+        return "Fault";
+    }
+    if (strcmp(cs, "3") == 0) {
+        return "Bulk";
+    }
+    if (strcmp(cs, "4") == 0) {
+        return "Absorption";
+    }
+    if (strcmp(cs, "5") == 0) {
+        return "Float";
+    }
+    if (strcmp(cs, "7") == 0) {
+        return "Equalize";
+    }
 
     return cs;
 }
 
-static int toIntSafe(const char* value, int fallback)
-{
-    if (value == NULL || value[0] == '\0')
-    {
+static int toIntSafe(const char* value, int fallback) {
+    if (value == NULL || value[0] == '\0') {
         return fallback;
     }
 
     return (int)strtol(value, NULL, 10);
 }
 
-static float toScaledFloat(const char* value, float scale)
-{
-    if (value == NULL || value[0] == '\0' || scale == 0.0f)
-    {
+static float toScaledFloat(const char* value, float scale) {
+    if (value == NULL || value[0] == '\0' || scale == 0.0f) {
         return 0.0f;
     }
 
     return strtof(value, NULL) / scale;
 }
 
-
-static void copyString(char* dest, size_t destSize, const char* src)
-{
-    if (dest == NULL || destSize == 0)
-    {
+static void copyString(char* dest, size_t destSize, const char* src) {
+    if (dest == NULL || destSize == 0) {
         return;
     }
 
-    if (src == NULL)
-    {
+    if (src == NULL) {
         dest[0] = '\0';
         return;
     }

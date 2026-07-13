@@ -12,9 +12,6 @@
 #include "serial-pio/serial-pio.h"
 #include "system/system.h"
 
-#include "hardware/pio.h"
-#include "uart_rx.pio.h"   // generated from uart_rx.pio by pico_generate_pio_header()
-
 int main()
 {
     set_clock_khz();
