@@ -32,4 +32,7 @@ typedef struct
     uint32_t lastUpdateMs;
 } MpptData;
 
+extern MpptData CurrentMpptData;
+extern bool is_charger_data_received;
 
+void processLine(char* line);
