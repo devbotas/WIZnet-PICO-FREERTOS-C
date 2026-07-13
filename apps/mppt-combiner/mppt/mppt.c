@@ -1,8 +1,11 @@
 #include "mppt.h"
+#include "helpers.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "../helpers/helpers.h"
 #include "pico/time.h"
 
 #define MPPT_MAX_PAIRS     32
@@ -17,7 +20,6 @@ static char keys[MPPT_MAX_PAIRS][MPPT_KEY_MAX_LEN];
 static char values[MPPT_MAX_PAIRS][MPPT_VALUE_MAX_LEN];
 static int pairCount = 0;
 
-static void trimLine(char* line);
 static void addPair(const char* key, const char* value);
 static const char* getValue(const char* key);
 static void resetFrame(void);
@@ -39,8 +41,8 @@ void processLine(char* line)
         return;
     }
 
-    trimLine(line);
-
+    strtrim(line);
+    
     if (line[0] == '\0')
     {
         return;
@@ -171,35 +173,6 @@ static float toScaledFloat(const char* value, float scale)
     return strtof(value, NULL) / scale;
 }
 
-static void trimLine(char* line)
-{
-    char* start = line;
-
-    while (*start == ' ' || *start == '\t' || *start == '\r' || *start == '\n')
-    {
-        start++;
-    }
-
-    if (start != line)
-    {
-        memmove(line, start, strlen(start) + 1);
-    }
-
-    size_t len = strlen(line);
-
-    while (len > 0)
-    {
-        char c = line[len - 1];
-
-        if (c != ' ' && c != '\t' && c != '\r' && c != '\n')
-        {
-            break;
-        }
-
-        line[len - 1] = '\0';
-        len--;
-    }
-}
 
 static void copyString(char* dest, size_t destSize, const char* src)
 {
