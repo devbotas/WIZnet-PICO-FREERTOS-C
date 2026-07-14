@@ -7,15 +7,13 @@
 #include <stdio.h>
 #include "dhcp.h"
 
-void get_ipi_from_dhcp_task(void* argument)
-{
+void get_ipi_from_dhcp_task(void* argument) {
     int retval = 0;
     uint8_t link;
     uint16_t len = 0;
     uint32_t dhcp_retry = 0;
 
-    if (network_information.dhcp == NETINFO_DHCP)
-    {
+    if (network_information.dhcp == NETINFO_DHCP) {
         initialize_dhcp();
     }
     else // static
@@ -25,28 +23,23 @@ void get_ipi_from_dhcp_task(void* argument)
         /* Get network information */
         print_network_information(network_information);
 
-        while (1)
-        {
+        while (1) {
             vTaskDelay(1000 * 1000);
         }
     }
 
-    while (1)
-    {
+    while (1) {
         link = wizphy_getphylink();
 
-        if (link == PHY_LINK_OFF)
-        {
+        if (link == PHY_LINK_OFF) {
             printf("PHY_LINK_OFF\n");
 
             DHCP_stop();
 
-            while (1)
-            {
+            while (1) {
                 link = wizphy_getphylink();
 
-                if (link == PHY_LINK_ON)
-                {
+                if (link == PHY_LINK_ON) {
                     initialize_dhcp();
 
                     dhcp_retry = 0;
@@ -60,10 +53,8 @@ void get_ipi_from_dhcp_task(void* argument)
 
         retval = DHCP_run();
 
-        if (retval == DHCP_IP_LEASED)
-        {
-            if (g_dhcp_get_ip_flag == 0)
-            {
+        if (retval == DHCP_IP_LEASED) {
+            if (g_dhcp_get_ip_flag == 0) {
                 dhcp_retry = 0;
 
                 printf(" DHCP success\n");
@@ -73,25 +64,21 @@ void get_ipi_from_dhcp_task(void* argument)
                 xSemaphoreGive(dns_semaphore);
             }
         }
-        else if (retval == DHCP_FAILED)
-        {
+        else if (retval == DHCP_FAILED) {
             g_dhcp_get_ip_flag = 0;
             dhcp_retry++;
 
-            if (dhcp_retry <= DHCP_RETRY_COUNT)
-            {
+            if (dhcp_retry <= DHCP_RETRY_COUNT) {
                 printf(" DHCP timeout occurred and retry %d\n", dhcp_retry);
             }
         }
 
-        if (dhcp_retry > DHCP_RETRY_COUNT)
-        {
+        if (dhcp_retry > DHCP_RETRY_COUNT) {
             printf(" DHCP failed\n");
 
             DHCP_stop();
 
-            while (1)
-            {
+            while (1) {
                 vTaskDelay(1000 * 1000);
             }
         }

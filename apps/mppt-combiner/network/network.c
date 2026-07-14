@@ -26,8 +26,7 @@ wiz_NetInfo network_information =
 
 volatile uint32_t g_msec_cnt = 0;
 
-void network_init(void)
-{
+void network_init(void) {
     wizchip_spi_initialize();
     wizchip_cris_initialize();
 
@@ -38,8 +37,7 @@ void network_init(void)
     wizchip_1ms_timer_initialize(repeating_timer_callback);
 }
 
-void initialize_dhcp(void)
-{
+void initialize_dhcp(void) {
     printf(" DHCP client running\n");
 
     DHCP_init(SOCKET_DHCP, ethernet_buffer);
@@ -49,8 +47,7 @@ void initialize_dhcp(void)
     g_dhcp_get_ip_flag = 0;
 }
 
-void assign_ip_from_dhcp(void)
-{
+void assign_ip_from_dhcp(void) {
     getIPfromDHCP(network_information.ip);
     getGWfromDHCP(network_information.gw);
     getSNfromDHCP(network_information.sn);
@@ -65,23 +62,19 @@ void assign_ip_from_dhcp(void)
     printf(" DHCP leased time : %ld seconds\n", getDHCPLeasetime());
 }
 
-void resolve_dhcp_conflict(void)
-{
+void resolve_dhcp_conflict(void) {
     printf(" Conflict IP from DHCP\n");
 
     // halt or reset or any...
-    while (1)
-    {
+    while (1) {
         vTaskDelay(1000 * 1000);
     }
 }
 
-void repeating_timer_callback(void)
-{
+void repeating_timer_callback(void) {
     g_msec_cnt++;
 
-    if (g_msec_cnt >= 1000 - 1)
-    {
+    if (g_msec_cnt >= 1000 - 1) {
         g_msec_cnt = 0;
 
         DHCP_time_handler();

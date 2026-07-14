@@ -12,8 +12,7 @@
 #include "serial-pio/serial-pio.h"
 #include "system/system.h"
 
-int main()
-{
+int main() {
     set_clock_khz();
 
     stdio_init_all();
@@ -31,7 +30,6 @@ int main()
     vTaskStartScheduler();
 
     // Should never reach this.
-    while (1)
-    {
+    while (1) {
     }
 }

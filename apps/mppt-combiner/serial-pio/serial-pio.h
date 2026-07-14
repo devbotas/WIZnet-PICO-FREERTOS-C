@@ -7,8 +7,7 @@
 #define POLL_INTERVAL_MS 10
 #include <stdint.h>
 
-typedef struct
-{
+typedef struct {
     uint8_t data[SERIALPIO_BUF_SIZE];
     volatile uint16_t head;
     volatile uint16_t tail;

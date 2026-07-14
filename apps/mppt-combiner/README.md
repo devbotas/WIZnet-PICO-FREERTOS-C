@@ -1,14 +1,10 @@
 # How to Test DHCP & DNS Example
 
-
-
 ## Step 1: Prepare software
 
 The following serial terminal program is required for DHCP & DNS example test, download and install from below link.
 
 - [**Tera Term**][link-tera_term]
-
-
 
 ## Step 2: Prepare hardware
 
@@ -18,9 +14,7 @@ If you are using WIZnet's PICO board, you can skip '1. Combine...'
 
 2. Connect ethernet cable to your PICO board ethernet port.
 
-3. Connect your PICO board to desktop or laptop using USB cable. 
-
-
+3. Connect your PICO board to desktop or laptop using USB cable.
 
 ## Step 3: Setup DHCP & DNS Example
 
@@ -31,6 +25,7 @@ To test the DHCP & DNS example, minor settings shall be done in code.
 Setup the SPI interface you use.
 
 ### For **W55RP20-EVB-PICO**:
+
 If you are using the **W55RP20-EVB-PICO**, enable `USE_PIO` and configure as follows:
 
 ```cpp
@@ -50,7 +45,9 @@ If you are using the **W55RP20-EVB-PICO**, enable `USE_PIO` and configure as fol
 ---
 
 ### For **W6300-EVB-PICO** or **W6300-EVB-PICO2**:
-If you are using the **W6300-EVB-PICO** or **W6300-EVB-PICO2**, use the following pinout and SPI clock divider configuration:
+
+If you are using the **W6300-EVB-PICO** or **W6300-EVB-PICO2**, use the following pinout and SPI clock divider
+configuration:
 
 ```cpp
 #elif (DEVICE_BOARD_NAME == W6300_EVB_PICO || DEVICE_BOARD_NAME == W6300_EVB_PICO2)
@@ -71,6 +68,7 @@ If you are using the **W6300-EVB-PICO** or **W6300-EVB-PICO2**, use the followin
 ---
 
 ### For other generic SPI boards
+
 If you are not using any of the above boards, you can fall back to a default SPI configuration:
 
 ```cpp
@@ -93,7 +91,8 @@ Make sure you are **not defining `USE_PIO`** in your setup when using DMA:
 // #define USE_PIO
 ```
 
-2. Setup network configuration such as IP in 'wizchip_dhcp_dns.c', which is the DHCP & DNS example in 'WIZnet-PICO-FREERTOS-C/examples/dhcp_dns/' directory.
+2. Setup network configuration such as IP in 'wizchip_dhcp_dns.c', which is the DHCP & DNS example in '
+   WIZnet-PICO-FREERTOS-C/examples/dhcp_dns/' directory.
 
 Setup IP, other network settings to suit your network environment and whether to use DHCP.
 
@@ -135,27 +134,27 @@ static wiz_NetInfo g_net_info =
 
 3. Setup DNS configuration
 
-Setup the domain name that you want to get IP in 'wizchip_dhcp_dns.c' in 'WIZnet-PICO-FREERTOS-C/examples/dhcp_dns/' directory.
+Setup the domain name that you want to get IP in 'wizchip_dhcp_dns.c' in 'WIZnet-PICO-FREERTOS-C/examples/dhcp_dns/'
+directory.
 
 ```cpp
 /* DNS */
 static uint8_t g_dns_target_domain[] = "www.wiznet.io";
 ```
 
-
-
 ## Step 4: Build
 
-1. After completing the DHCP & DNS example configuration, click 'build' in the status bar at the bottom of Visual Studio Code or press the 'F7' button on the keyboard to build.
+1. After completing the DHCP & DNS example configuration, click 'build' in the status bar at the bottom of Visual Studio
+   Code or press the 'F7' button on the keyboard to build.
 
-2. When the build is completed, 'wizchip_dhcp_dns.uf2' is generated in 'WIZnet-PICO-FREERTOS-C/build/examples/dhcp_dns/' directory.
-
-
+2. When the build is completed, 'wizchip_dhcp_dns.uf2' is generated in 'WIZnet-PICO-FREERTOS-C/build/examples/dhcp_dns/'
+   directory.
 
 ## Step 5: Upload and Run
 
-1. 1. While pressing the BOOTSEL button of the Pico power on the board, the USB mass storage 'RPI-RP2' or 'RP2350' is automatically mounted.
-
+1.
+    1. While pressing the BOOTSEL button of the Pico power on the board, the USB mass storage 'RPI-RP2' or 'RP2350' is
+       automatically mounted.
 
 ![][link-raspberry_pi_pico_usb_mass_storage]
 
@@ -167,7 +166,8 @@ static uint8_t g_dns_target_domain[] = "www.wiznet.io";
 
 4. Reset your board.
 
-5. If the DHCP & DNS example works normally on the pico, you can see the network information, IP automatically assigned by DHCP of it and the IP get from the domain name.
+5. If the DHCP & DNS example works normally on the pico, you can see the network information, IP automatically assigned
+   by DHCP of it and the IP get from the domain name.
 
 ![][link-see_network_information_ip_assigned_by_dhcp_of_raspberry_pi_pico_and_get_ip_through_dns]
 
@@ -178,6 +178,9 @@ Link
 -->
 
 [link-tera_term]: https://osdn.net/projects/ttssh2/releases/
+
 [link-raspberry_pi_pico_usb_mass_storage]: https://github.com/WIZnet-ioNIC/WIZnet-PICO-FREERTOS-C/blob/main/static/images/dhcp_dns/raspberry_pi_pico_usb_mass_storage.png
+
 [link-connect_to_serial_com_port]: https://github.com/WIZnet-ioNIC/WIZnet-PICO-FREERTOS-C/blob/main/static/images/dhcp_dns/connect_to_serial_com_port.png
+
 [link-see_network_information_ip_assigned_by_dhcp_of_raspberry_pi_pico_and_get_ip_through_dns]: https://github.com/WIZnet-ioNIC/WIZnet-PICO-FREERTOS-C/blob/main/static/images/dhcp_dns/see_network_information_ip_assigned_by_dhcp_of_raspberry_pi_pico_and_get_ip_through_dns.png

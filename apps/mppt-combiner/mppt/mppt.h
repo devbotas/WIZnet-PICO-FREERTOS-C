@@ -8,8 +8,7 @@
 #define MPPT_SERIAL_NUMBER_MAX_LEN    32
 #define MPPT_STATE_TEXT_MAX_LEN       32
 
-typedef struct
-{
+typedef struct {
     char productId[MPPT_PRODUCT_ID_MAX_LEN];
     char firmwareVersion[MPPT_FIRMWARE_VERSION_MAX_LEN];
     char serialNumber[MPPT_SERIAL_NUMBER_MAX_LEN];

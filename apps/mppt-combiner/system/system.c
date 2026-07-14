@@ -1,8 +1,7 @@
 #include "system.h"
 #include "hardware/clocks.h"
 
-void set_clock_khz(void)
-{
+void set_clock_khz(void) {
     // set a system clock frequency in khz
     set_sys_clock_khz(PLL_SYS_KHZ, true);
 

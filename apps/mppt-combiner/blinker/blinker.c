@@ -4,8 +4,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-void blinker_task(void* param)
-{
+void blinker_task(void* param) {
     (void)param;
 
     gpio_init(USER_LED_GPIO);
@@ -13,8 +12,7 @@ void blinker_task(void* param)
 
     bool led_on = false;
 
-    while (true)
-    {
+    while (true) {
         led_on = !led_on;
         gpio_put(USER_LED_GPIO, led_on);
         printf("LED %s\n", led_on ? "ON" : "OFF");
