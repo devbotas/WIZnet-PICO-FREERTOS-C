@@ -54,21 +54,21 @@ if (NOT DEFINED WIZNET_DIR)
     message(STATUS "WIZNET_DIR = ${WIZNET_DIR}")
 endif ()
 
-if (NOT DEFINED MBEDTLS_DIR)
-    set(MBEDTLS_DIR ${CMAKE_SOURCE_DIR}/libraries/mbedtls)
-    message(STATUS "MBEDTLS_DIR = ${MBEDTLS_DIR}")
-endif ()
+#if (NOT DEFINED MBEDTLS_DIR)
+#    set(MBEDTLS_DIR ${CMAKE_SOURCE_DIR}/libraries/mbedtls)
+#    message(STATUS "MBEDTLS_DIR = ${MBEDTLS_DIR}")
+#endif ()
 
 if (NOT DEFINED PORT_DIR)
     set(PORT_DIR ${CMAKE_SOURCE_DIR}/port)
     message(STATUS "PORT_DIR = ${PORT_DIR}")
 endif ()
 
-# Turn off mbedtls test mode 
-set(ENABLE_PROGRAMS OFF CACHE BOOL "Build mbedtls programs")
-set(ENABLE_TESTING OFF CACHE BOOL "Build mbedtls testing")
-add_definitions(-DMBEDTLS_CONFIG_FILE="${PORT_DIR}/mbedtls/inc/ssl_config.h")
-add_definitions(-DSET_TRUSTED_CERT_IN_SAMPLES)
+## Turn off mbedtls test mode
+#set(ENABLE_PROGRAMS OFF CACHE BOOL "Build mbedtls programs")
+#set(ENABLE_TESTING OFF CACHE BOOL "Build mbedtls testing")
+#add_definitions(-DMBEDTLS_CONFIG_FILE="${PORT_DIR}/mbedtls/inc/ssl_config.h")
+#add_definitions(-DSET_TRUSTED_CERT_IN_SAMPLES)
 
 # My practical apps
 add_subdirectory(apps)
@@ -76,7 +76,7 @@ add_subdirectory(apps)
 # Add libraries in subdirectories
 add_subdirectory(${CMAKE_SOURCE_DIR}/libraries)
 #add_subdirectory(${FREERTOS_DIR})
-add_subdirectory(${MBEDTLS_DIR})
+# add_subdirectory(${MBEDTLS_DIR})
 add_subdirectory(${PORT_DIR})
 
 # Set compile options
