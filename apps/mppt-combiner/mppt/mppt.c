@@ -12,7 +12,7 @@
 #define MPPT_KEY_MAX_LEN 16
 #define MPPT_VALUE_MAX_LEN 64
 
-MpptData CurrentMpptData = {0};
+mppt_data current_mppt_data = {0};
 
 bool is_charger_data_received = false;
 
@@ -50,17 +50,88 @@ void processLine(char* line) {
 
     *tabPos = '\0';
 
+
     const char* key = line;
     const char* value = tabPos + 1;
 
-    addPair(key, value);
+    strtrim(key);
+    strtrim(value);
 
+    addPair(key, value);
+    printf(key);
     if (strcmp(key, "Checksum") == 0) {
         commitFrame();
         resetFrame();
         is_charger_data_received = true;
     }
 }
+
+bool try_extract_line(char* buffer, char* extracted_line) {
+    // Victron VE.Direct is backwards. Every line *starts* with a \n, not *ends*.
+    if (buffer[0] != '\n') {
+        goto error;
+    }
+
+    if (strlen(buffer) < 4) {
+        goto error;
+    }
+
+    // Trying to figure out if there is more than one line in the buffer.
+    char* next_newline = strchr(buffer + 1, '\n');
+    int number_of_bytes_to_copy = strlen(buffer);
+    if (next_newline != NULL) {
+        number_of_bytes_to_copy = next_newline - buffer;
+    }
+
+    // Found a line. Extracting. If it is not the last line, then we also need to append a null terminator.
+    strncpy(extracted_line, buffer, number_of_bytes_to_copy);
+    if (strlen(extracted_line) > number_of_bytes_to_copy) {
+        extracted_line[number_of_bytes_to_copy] = '\0';
+    }
+
+    // Condensing the input buffer (until it is no more).
+    if (next_newline != NULL) {
+        strcpy(buffer, next_newline);
+    }
+    else {
+        *buffer = '\0';
+    }
+
+    return true;
+
+error:
+    *extracted_line = '\0';
+    return false;
+}
+
+bool try_process_line(char* line, char* key, char* value) {
+    if (line == NULL) {
+        goto error;
+    }
+
+    char* tab_substring = strchr(line, '\t');
+
+    if (tab_substring == NULL) {
+        goto error;
+    }
+
+    int tab_position = tab_substring - line;
+
+    strncpy(key, line, tab_position);
+    key[tab_position] = '\0';
+
+    strcpy(value, tab_substring + 1);
+
+    strtrim(key);
+    strtrim(value);
+
+    return true;
+error:
+    *key = '\0';
+    *value = '\0';
+    return false;
+}
+
 
 static void addPair(const char* key, const char* value) {
     if (pairCount >= MPPT_MAX_PAIRS) {
@@ -76,40 +147,40 @@ static void addPair(const char* key, const char* value) {
 static void commitFrame(void) {
     const char* fw = getValue("FW");
 
-    CurrentMpptData.deviceInstance = 256;
+    current_mppt_data.deviceInstance = 256;
 
-    copyString(CurrentMpptData.productId, sizeof(CurrentMpptData.productId),
+    copyString(current_mppt_data.productId, sizeof(current_mppt_data.productId),
                getValue("PID"));
 
     if (strlen(fw) >= 3) {
-        snprintf(CurrentMpptData.firmwareVersion,
-                 sizeof(CurrentMpptData.firmwareVersion), "%c.%.2s", fw[0], fw + 1);
+        snprintf(current_mppt_data.firmwareVersion,
+                 sizeof(current_mppt_data.firmwareVersion), "%c.%.2s", fw[0], fw + 1);
     }
     else {
-        copyString(CurrentMpptData.firmwareVersion,
-                   sizeof(CurrentMpptData.firmwareVersion), fw);
+        copyString(current_mppt_data.firmwareVersion,
+                   sizeof(current_mppt_data.firmwareVersion), fw);
     }
 
-    copyString(CurrentMpptData.serialNumber, sizeof(CurrentMpptData.serialNumber),
+    copyString(current_mppt_data.serialNumber, sizeof(current_mppt_data.serialNumber),
                getValue("SER#"));
 
-    copyString(CurrentMpptData.stateText, sizeof(CurrentMpptData.stateText),
+    copyString(current_mppt_data.stateText, sizeof(current_mppt_data.stateText),
                mapState(getValue("CS")));
 
-    CurrentMpptData.errorCode = toIntSafe(getValue("ERR"), 0);
-    CurrentMpptData.batteryVoltageV = toScaledFloat(getValue("V"), 1000.0f);
-    CurrentMpptData.batteryCurrentA = toScaledFloat(getValue("I"), 1000.0f);
-    CurrentMpptData.panelVoltageV = toScaledFloat(getValue("VPV"), 1000.0f);
-    CurrentMpptData.panelPowerW = toIntSafe(getValue("PPV"), 0);
-    CurrentMpptData.yieldTodayKWh = toScaledFloat(getValue("H20"), 100.0f);
-    CurrentMpptData.yieldYesterdayKWh = toScaledFloat(getValue("H22"), 100.0f);
-    CurrentMpptData.maxPowerTodayW = toIntSafe(getValue("H21"), 0);
-    CurrentMpptData.maxPowerYesterdayW = toIntSafe(getValue("H23"), 0);
-    CurrentMpptData.loadCurrentA = toScaledFloat(getValue("IL"), 1000.0f);
-    CurrentMpptData.loadOutputState = toIntSafe(getValue("LOAD"), 0) == 1;
-    CurrentMpptData.chargerModeId = toIntSafe(getValue("MPPT"), 0);
-    CurrentMpptData.frameValid = true;
-    CurrentMpptData.lastUpdateMs = millis();
+    current_mppt_data.errorCode = toIntSafe(getValue("ERR"), 0);
+    current_mppt_data.batteryVoltageV = toScaledFloat(getValue("V"), 1000.0f);
+    current_mppt_data.batteryCurrentA = toScaledFloat(getValue("I"), 1000.0f);
+    current_mppt_data.panelVoltageV = toScaledFloat(getValue("VPV"), 1000.0f);
+    current_mppt_data.panelPowerW = toIntSafe(getValue("PPV"), 0);
+    current_mppt_data.yieldTodayKWh = toScaledFloat(getValue("H20"), 100.0f);
+    current_mppt_data.yieldYesterdayKWh = toScaledFloat(getValue("H22"), 100.0f);
+    current_mppt_data.maxPowerTodayW = toIntSafe(getValue("H21"), 0);
+    current_mppt_data.maxPowerYesterdayW = toIntSafe(getValue("H23"), 0);
+    current_mppt_data.loadCurrentA = toScaledFloat(getValue("IL"), 1000.0f);
+    current_mppt_data.loadOutputState = toIntSafe(getValue("LOAD"), 0) == 1;
+    current_mppt_data.chargerModeId = toIntSafe(getValue("MPPT"), 0);
+    current_mppt_data.frameValid = true;
+    current_mppt_data.lastUpdateMs = millis();
 }
 
 static const char* getValue(const char* key) {

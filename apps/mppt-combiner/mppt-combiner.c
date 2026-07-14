@@ -22,7 +22,7 @@ int main() {
 
     xTaskCreate(get_ipi_from_dhcp_task, "DHCP", 2048, NULL, 8, NULL);
     xTaskCreate(blinker_task, "blinker", 256, NULL, 1, NULL);
-    xTaskCreate(run_serial_pio_monitor_task, "pio1", 256, NULL, 1, NULL);
+    xTaskCreate(run_serial_pio_monitor_task, "pio1", 2560, NULL, 1, NULL);
     xTaskCreate(banger_task, "banger", 256, NULL, 1, NULL);
 
     dns_semaphore = xSemaphoreCreateCounting((unsigned portBASE_TYPE)0x7fffffff, (unsigned portBASE_TYPE)0);

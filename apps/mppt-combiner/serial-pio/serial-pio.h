@@ -4,7 +4,7 @@
 #define SERIALPIO_BAUD 9600
 #define SERIALPIO_BUF_SIZE 256
 #define HEARTBEAT_MS 1000
-#define POLL_INTERVAL_MS 10
+#define POLL_INTERVAL_MS 1
 #include <stdint.h>
 
 typedef struct {

@@ -29,9 +29,11 @@ typedef struct {
     int chargerModeId;
     bool frameValid;
     uint32_t lastUpdateMs;
-} MpptData;
+} mppt_data;
 
-extern MpptData CurrentMpptData;
+extern mppt_data current_mppt_data;
 extern bool is_charger_data_received;
 
 void processLine(char* line);
+bool try_process_line(char* line, char* key, char* value);
+bool try_extract_line(char* buffer, char* extracted_line);

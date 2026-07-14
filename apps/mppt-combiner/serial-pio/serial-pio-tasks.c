@@ -5,57 +5,20 @@
 #include <semphr.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 #include <uart_rx.pio.h>
 
+#include "helpers.h"
 #include "hardware/pio.h"
 #include "hardware/uart.h"
 #include "pico/time.h"
+#include "mppt.h"
 
 
 static inline void serialpio_begin(PIO pio, uint sm, uint offset, uint pin, uint baud) {
     uart_rx_program_init(pio, sm, offset, pin, baud);
 }
 
-static inline bool serialpio_buffer_empty(void) {
-    return rxbuf.head == rxbuf.tail;
-}
-
-static inline bool serialpio_buffer_full(void) {
-    return ((rxbuf.head + 1u) % SERIALPIO_BUF_SIZE) == rxbuf.tail;
-}
-
-static inline void serialpio_buffer_push(uint8_t c) {
-    uint16_t next = (rxbuf.head + 1u) % SERIALPIO_BUF_SIZE;
-    if (next == rxbuf.tail) {
-        rxbuf.dropped++;
-        return;
-    }
-    rxbuf.data[rxbuf.head] = c;
-    rxbuf.head = next;
-}
-
-static inline int serialpio_read(void) {
-    if (serialpio_buffer_empty()) {
-        return -1;
-    }
-    uint8_t c = rxbuf.data[rxbuf.tail];
-    rxbuf.tail = (rxbuf.tail + 1u) % SERIALPIO_BUF_SIZE;
-    return c;
-}
-
-static inline uint16_t serialpio_available(void) {
-    if (rxbuf.head >= rxbuf.tail) {
-        return rxbuf.head - rxbuf.tail;
-    }
-    return SERIALPIO_BUF_SIZE - rxbuf.tail + rxbuf.head;
-}
-
-static void serialpio_poll(PIO pio, uint sm) {
-    while (!pio_sm_is_rx_fifo_empty(pio, sm)) {
-        uint8_t c = (uint8_t)uart_rx_program_getc(pio, sm);
-        serialpio_buffer_push(c);
-    }
-}
 
 void run_serial_pio_monitor_task(void* argument) {
     sleep_ms(1500);
@@ -70,23 +33,60 @@ void run_serial_pio_monitor_task(void* argument) {
     printf("Connect an external UART TX signal to GPIO %u\n", SERIALPIO_RX_PIN);
 
     absolute_time_t next_heartbeat = delayed_by_ms(get_absolute_time(), HEARTBEAT_MS);
-    char line[80];
-    size_t line_len = 0;
+    char frame[1000] = {0};
+    char last_line[256] = {0};
+    size_t frame_length = 0;
+    size_t line_length = 0;
+    char bybiline[256] = {0};
 
     while (true) {
-        serialpio_poll(pio, sm);
+        while (!pio_sm_is_rx_fifo_empty(pio, sm)) {
+            char c = uart_rx_program_getc(pio, sm);
 
-        while (serialpio_available() > 0) {
-            int ch = serialpio_read();
-            if (ch < 0) {
-                break;
+            if (c == '\n') {
+                last_line[line_length] = '\0';
+
+                char key[50], value[50];
+                if (try_process_line(last_line, key, value)) {
+                    //printf("Key: %s, value: %s\n", key, value);
+
+                    if (strcmp(key, "Checksum") == 0) {
+                        int actual_checksum_value = 0;
+                        for (int i = 0; i < frame_length; i++) {
+                            actual_checksum_value = (actual_checksum_value + frame[i]) % 0xFF;
+                        }
+
+                        char sent_checksum_value = value[0];
+
+                        while (try_extract_line(frame, bybiline)) {
+                            if (try_process_line(bybiline, key, value)) {
+                                printf("Key: %s, value: %s\n", key, value);
+                            }
+                        }
+
+                        if (actual_checksum_value == sent_checksum_value) {
+                            printf("pyzda!\n");
+                        }
+                        else {
+                            printf("bybis\n");
+                        }
+
+
+                        frame_length = 0;
+                    }
+                }
+
+                line_length = 0;
             }
 
-            //printf("%c", ch);
-            putchar(ch);
-
-            sleep_ms(POLL_INTERVAL_MS);
+            last_line[line_length] = c;
+            frame[frame_length] = c;
+            frame_length++;
+            line_length++;
+            // TODO: Add buffer overflow protection
         }
+
+        sleep_ms(POLL_INTERVAL_MS);
     }
 }
 
@@ -96,7 +96,7 @@ void banger_task(void* argument) {
     // Set up the hard UART we're going to use to print characters
     uart_init(uart1, 9600);
     gpio_set_function(4, GPIO_FUNC_UART);
-    const char* bybis = "pyzda";
+    const char* bybis = "\n V\t20.0\n  \n Checksum \t 1";
     while (true) {
         uart_puts(uart1, bybis);
 

@@ -15,7 +15,7 @@ void blinker_task(void* param) {
     while (true) {
         led_on = !led_on;
         gpio_put(USER_LED_GPIO, led_on);
-        printf("LED %s\n", led_on ? "ON" : "OFF");
+        //printf("LED %s\n", led_on ? "ON" : "OFF");
         vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
