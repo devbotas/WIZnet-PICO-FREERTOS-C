@@ -5,6 +5,8 @@
 #include <FreeRTOS.h>
 #include <task.h>
 #include <semphr.h>
+
+#include "mppt.h"
 #include "port_common.h"
 
 #include "network/network.h"
@@ -19,6 +21,8 @@ int main() {
     sleep_ms(3000);
 
     network_init();
+
+    received_mppt_datas = xQueueCreate(10, sizeof(mppt_data));
 
     xTaskCreate(get_ipi_from_dhcp_task, "DHCP", 2048, NULL, 8, NULL);
     xTaskCreate(blinker_task, "blinker", 256, NULL, 1, NULL);

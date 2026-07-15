@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "FreeRTOS.h"
+#include "queue.h"
 
 #include "../helpers/helpers.h"
 #include "helpers.h"
@@ -13,6 +15,7 @@
 #define MPPT_VALUE_MAX_LEN 64
 
 mppt_data current_mppt_data = {0};
+QueueHandle_t received_mppt_datas = NULL;
 
 bool is_charger_data_received = false;
 
@@ -25,7 +28,7 @@ static const char* getValue(const char* key);
 static void resetFrame(void);
 static void commitFrame(void);
 static int toIntSafe(const char* value, int fallback);
-static float toScaledFloat(const char* value, float scale);
+float toScaledFloat(const char* value, float scale);
 static const char* mapState(const char* cs);
 static void copyString(char* dest, size_t destSize, const char* src);
 
@@ -176,6 +179,8 @@ static void commitFrame(void) {
     current_mppt_data.yieldYesterdayKWh = toScaledFloat(getValue("H22"), 100.0f);
     current_mppt_data.maxPowerTodayW = toIntSafe(getValue("H21"), 0);
     current_mppt_data.maxPowerYesterdayW = toIntSafe(getValue("H23"), 0);
+    current_mppt_data.yieldTotalKWh = toScaledFloat(getValue("H19"), 100.0f);
+    current_mppt_data.daySequenceNumber = toIntSafe(getValue("HSDS"), 0);
     current_mppt_data.loadCurrentA = toScaledFloat(getValue("IL"), 1000.0f);
     current_mppt_data.loadOutputState = toIntSafe(getValue("LOAD"), 0) == 1;
     current_mppt_data.chargerModeId = toIntSafe(getValue("MPPT"), 0);
@@ -231,7 +236,7 @@ static int toIntSafe(const char* value, int fallback) {
     return (int)strtol(value, NULL, 10);
 }
 
-static float toScaledFloat(const char* value, float scale) {
+float toScaledFloat(const char* value, float scale) {
     if (value == NULL || value[0] == '\0' || scale == 0.0f) {
         return 0.0f;
     }

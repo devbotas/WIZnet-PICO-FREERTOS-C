@@ -2,6 +2,8 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "FreeRTOS.h"
+#include "queue.h"
 
 #define MPPT_PRODUCT_ID_MAX_LEN       32
 #define MPPT_FIRMWARE_VERSION_MAX_LEN 32
@@ -24,6 +26,8 @@ typedef struct {
     float yieldYesterdayKWh;
     int maxPowerTodayW;
     int maxPowerYesterdayW;
+    float yieldTotalKWh;
+    int daySequenceNumber;
     float loadCurrentA;
     bool loadOutputState;
     int chargerModeId;
@@ -33,7 +37,9 @@ typedef struct {
 
 extern mppt_data current_mppt_data;
 extern bool is_charger_data_received;
+extern QueueHandle_t received_mppt_datas;
 
 void processLine(char* line);
 bool try_process_line(char* line, char* key, char* value);
 bool try_extract_line(char* buffer, char* extracted_line);
+float toScaledFloat(const char* value, float scale);
