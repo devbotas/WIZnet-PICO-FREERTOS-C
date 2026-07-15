@@ -1,13 +1,12 @@
 set(TARGET_NAME mppt-combiner)
 
-add_executable(${TARGET_NAME} ${TARGET_NAME}.c
-        helpers/helpers.h
-        helpers/helpers.c)
+add_executable(${TARGET_NAME} ${TARGET_NAME}.c)
 
 add_subdirectory(blinker)
 add_subdirectory(helpers)
 add_subdirectory(mppt)
 add_subdirectory(network)
+add_subdirectory(rest_client)
 add_subdirectory(serial-pio)
 add_subdirectory(system)
 
@@ -16,6 +15,7 @@ target_include_directories(${TARGET_NAME} PUBLIC
 )
 
 target_link_libraries(${TARGET_NAME} PRIVATE
+        rest_client
         helpers
         pico_stdlib
         hardware_spi
