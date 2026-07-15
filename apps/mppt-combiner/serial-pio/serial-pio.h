@@ -1,6 +1,5 @@
 #pragma once
 
-#define SERIALPIO_RX_PIN 3
 #define SERIALPIO_BAUD 9600
 #define SERIALPIO_BUF_SIZE 256
 #define HEARTBEAT_MS 1000

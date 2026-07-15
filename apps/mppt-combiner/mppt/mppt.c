@@ -66,6 +66,7 @@ void post_rest_continuously_task(void* argument) {
                  "\"product_id\":\"%s\","
                  "\"firmware_version\":\"%s\","
                  "\"serial_number\":\"%s\","
+                 "\"device_instance\":%d,"
                  "\"state_text\":\"%s\","
                  "\"battery_voltage_v\":%.2f,"
                  "\"battery_current_a\":%.2f,"
@@ -78,6 +79,7 @@ void post_rest_continuously_task(void* argument) {
                  data_to_send.product_id,
                  data_to_send.firmware_version,
                  data_to_send.serial_number,
+                 data_to_send.device_instance,
                  data_to_send.state_text,
                  data_to_send.battery_voltage_v,
                  data_to_send.battery_current_a,

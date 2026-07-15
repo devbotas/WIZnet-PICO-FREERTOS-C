@@ -28,7 +28,23 @@ int main() {
 
     xTaskCreate(get_ipi_from_dhcp_task, "DHCP", 2048, NULL, 8, NULL);
     xTaskCreate(blinker_task, "blinker", 256, NULL, 1, NULL);
-    xTaskCreate(run_serial_pio_monitor_task, "pio1", 2560, received_mppt_datas, 1, NULL);
+
+    static void* task_args_1[3];
+    static uint32_t device_instance1 = 256;
+    static uint8_t pin_number1 = 3;
+    task_args_1[0] = received_mppt_datas;
+    task_args_1[1] = &device_instance1;
+    task_args_1[2] = &pin_number1;
+    xTaskCreate(run_serial_pio_monitor_task, "pio1", 2560, task_args_1, 1, NULL);
+
+    static void* task_args_2[3];
+    static uint32_t device_instance2 = 257;
+    static uint8_t pin_number2 = 8;
+    task_args_2[0] = received_mppt_datas;
+    task_args_2[1] = &device_instance2;
+    task_args_2[2] = &pin_number2;
+    xTaskCreate(run_serial_pio_monitor_task, "pio2", 2560, task_args_2, 1, NULL);
+
     xTaskCreate(banger_task, "banger", 256, NULL, 1, NULL);
     xTaskCreate(post_rest_continuously_task, "rest_poster", 1024, received_mppt_datas, 1, NULL);
 

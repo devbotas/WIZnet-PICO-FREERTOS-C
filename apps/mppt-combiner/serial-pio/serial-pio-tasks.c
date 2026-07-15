@@ -22,7 +22,10 @@ static inline void serialpio_begin(PIO pio, uint sm, uint offset, uint pin, uint
 
 
 void run_serial_pio_monitor_task(void* argument) {
-    QueueHandle_t queue = argument;
+    void** args = (void**)argument;
+    QueueHandle_t queue = (QueueHandle_t)args[0];
+    uint32_t device_instance = *(uint32_t*)args[1];
+    uint8_t pin_number = *(uint8_t*)args[2];
 
     sleep_ms(1500);
 
@@ -30,10 +33,10 @@ void run_serial_pio_monitor_task(void* argument) {
     uint sm = 0;
     uint offset = pio_add_program(pio, &uart_rx_program);
 
-    serialpio_begin(pio, sm, offset, SERIALPIO_RX_PIN, SERIALPIO_BAUD);
+    serialpio_begin(pio, sm, offset, pin_number, SERIALPIO_BAUD);
 
-    printf("PIO Serial RX on GPIO %u at %u baud\n", SERIALPIO_RX_PIN, SERIALPIO_BAUD);
-    printf("Connect an external UART TX signal to GPIO %u\n", SERIALPIO_RX_PIN);
+    printf("PIO Serial RX on GPIO %u at %u baud\n", pin_number, SERIALPIO_BAUD);
+    printf("Connect an external UART TX signal to GPIO %u\n", pin_number);
 
     absolute_time_t next_heartbeat = delayed_by_ms(get_absolute_time(), HEARTBEAT_MS);
     char frame[1000] = {0};
@@ -151,7 +154,7 @@ void run_serial_pio_monitor_task(void* argument) {
 
                             printf("Key: %s, value: %s\n", key, value);
                         }
-                        new_data.device_instance = 256;
+                        new_data.device_instance = device_instance;
                         new_data.frame_valid = true;
                         new_data.last_update_ms = to_ms_since_boot(get_absolute_time());
 
