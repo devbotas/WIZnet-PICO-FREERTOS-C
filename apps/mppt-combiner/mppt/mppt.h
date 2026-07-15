@@ -37,9 +37,4 @@ typedef struct {
 
 extern mppt_data_t current_mppt_data;
 extern bool is_charger_data_received;
-extern QueueHandle_t received_mppt_datas;
-
-void process_line(char* line);
-bool try_process_line(char* line, char* key, char* value);
-bool try_extract_line(char* buffer, char* extracted_line);
-float to_scaled_float(const char* value, float scale);
+void post_rest_continuously_task(void* argument);

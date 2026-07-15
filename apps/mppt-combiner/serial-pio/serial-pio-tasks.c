@@ -22,6 +22,8 @@ static inline void serialpio_begin(PIO pio, uint sm, uint offset, uint pin, uint
 
 
 void run_serial_pio_monitor_task(void* argument) {
+    QueueHandle_t queue = argument;
+
     sleep_ms(1500);
 
     PIO pio = pio0;
@@ -160,7 +162,7 @@ void run_serial_pio_monitor_task(void* argument) {
                             printf("bybis\n");
                         }
 
-                        xQueueSend(received_mppt_datas, &new_data, 0);
+                        xQueueSend(queue, &new_data, 0);
 
                         frame_length = 0;
                     }

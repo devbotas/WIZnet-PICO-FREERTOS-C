@@ -14,6 +14,8 @@
 #include "serial-pio/serial-pio.h"
 #include "system/system.h"
 
+QueueHandle_t received_mppt_datas = NULL;
+
 int main() {
     set_clock_khz();
 
@@ -26,8 +28,9 @@ int main() {
 
     xTaskCreate(get_ipi_from_dhcp_task, "DHCP", 2048, NULL, 8, NULL);
     xTaskCreate(blinker_task, "blinker", 256, NULL, 1, NULL);
-    xTaskCreate(run_serial_pio_monitor_task, "pio1", 2560, NULL, 1, NULL);
+    xTaskCreate(run_serial_pio_monitor_task, "pio1", 2560, received_mppt_datas, 1, NULL);
     xTaskCreate(banger_task, "banger", 256, NULL, 1, NULL);
+    xTaskCreate(post_rest_continuously_task, "rest_poster", 1024, received_mppt_datas, 1, NULL);
 
     dns_semaphore = xSemaphoreCreateCounting((unsigned portBASE_TYPE)0x7fffffff, (unsigned portBASE_TYPE)0);
 

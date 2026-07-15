@@ -1,39 +1,81 @@
 #include "serial-pio.h"
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
+#include "helpers.h"
 
 serialpio_rx_buffer_t rxbuf = {0};
 
+bool try_process_line(char* line, char* key, char* value) {
+    if (line == NULL) {
+        goto error;
+    }
 
-// inline bool buffer_check_if_empty(void) {
-//     return rxbuf.head == rxbuf.tail;
-// }
-//
-// inline bool buffer_check_if_full(void) {
-//     return ((rxbuf.head + 1u) % SERIALPIO_BUF_SIZE) == rxbuf.tail;
-// }
-//
-// inline void buffer_push(uint8_t c) {
-//     uint16_t next = (rxbuf.head + 1u) % SERIALPIO_BUF_SIZE;
-//     if (next == rxbuf.tail) {
-//         rxbuf.dropped++;
-//         return;
-//     }
-//     rxbuf.data[rxbuf.head] = c;
-//     rxbuf.head = next;
-// }
-//
-// inline int buffer_read(void) {
-//     if (buffer_check_if_empty()) { return -1; }
-//
-//     uint8_t c = rxbuf.data[rxbuf.tail];
-//     rxbuf.tail = (rxbuf.tail + 1u) % SERIALPIO_BUF_SIZE;
-//     return c;
-// }
+    char* tab_substring = strchr(line, '\t');
 
-// inline uint16_t serialpio_available(void) {
-//     if (rxbuf.head >= rxbuf.tail) {
-//         return rxbuf.head - rxbuf.tail;
-//     }
-//     return SERIALPIO_BUF_SIZE - rxbuf.tail + rxbuf.head;
-// }
+    if (tab_substring == NULL) {
+        goto error;
+    }
 
+    int tab_position = tab_substring - line;
 
+    strncpy(key, line, tab_position);
+    key[tab_position] = '\0';
+
+    strcpy(value, tab_substring + 1);
+
+    strtrim(key);
+    strtrim(value);
+
+    return true;
+error:
+    *key = '\0';
+    *value = '\0';
+    return false;
+}
+
+bool try_extract_line(char* buffer, char* extracted_line) {
+    // Victron VE.Direct is backwards. Every line *starts* with a \n, not *ends*.
+    if (buffer[0] != '\n') {
+        goto error;
+    }
+
+    if (strlen(buffer) < 4) {
+        goto error;
+    }
+
+    // Trying to figure out if there is more than one line in the buffer.
+    char* next_newline = strchr(buffer + 1, '\n');
+    int number_of_bytes_to_copy = strlen(buffer);
+    if (next_newline != NULL) {
+        number_of_bytes_to_copy = next_newline - buffer;
+    }
+
+    // Found a line. Extracting. If it is not the last line, then we also need to append a null terminator.
+    strncpy(extracted_line, buffer, number_of_bytes_to_copy);
+    if (strlen(extracted_line) > number_of_bytes_to_copy) {
+        extracted_line[number_of_bytes_to_copy] = '\0';
+    }
+
+    // Condensing the input buffer (until it is no more).
+    if (next_newline != NULL) {
+        strcpy(buffer, next_newline);
+    }
+    else {
+        *buffer = '\0';
+    }
+
+    return true;
+
+error:
+    *extracted_line = '\0';
+    return false;
+}
+
+float to_scaled_float(const char* value, float scale) {
+    if (value == NULL || value[0] == '\0' || scale == 0.0f) {
+        return 0.0f;
+    }
+
+    return strtof(value, NULL) / scale;
+}

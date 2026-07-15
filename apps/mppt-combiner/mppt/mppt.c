@@ -7,203 +7,18 @@
 #include "queue.h"
 
 #include "../helpers/helpers.h"
-#include "helpers.h"
+#include "../rest_client/rest_client.h"
 #include "pico/time.h"
 
 #define MPPT_MAX_PAIRS 32
 #define MPPT_KEY_MAX_LEN 16
 #define MPPT_VALUE_MAX_LEN 64
 
-mppt_data_t current_mppt_data = {0};
-QueueHandle_t received_mppt_datas = NULL;
-
-bool is_charger_data_received = false;
-
-static char keys[MPPT_MAX_PAIRS][MPPT_KEY_MAX_LEN];
-static char values[MPPT_MAX_PAIRS][MPPT_VALUE_MAX_LEN];
-static int pairCount = 0;
-
-static void addPair(const char* key, const char* value);
-static const char* getValue(const char* key);
-static void resetFrame(void);
-static void commitFrame(void);
 static int toIntSafe(const char* value, int fallback);
 float to_scaled_float(const char* value, float scale);
 static const char* mapState(const char* cs);
-static void copyString(char* dest, size_t destSize, const char* src);
 
 static uint32_t millis(void) { return to_ms_since_boot(get_absolute_time()); }
-
-void process_line(char* line) {
-    if (line == NULL) {
-        return;
-    }
-
-    strtrim(line);
-
-    if (line[0] == '\0') {
-        return;
-    }
-
-    char* tabPos = strchr(line, '\t');
-
-    if (tabPos == NULL) {
-        return;
-    }
-
-    *tabPos = '\0';
-
-
-    const char* key = line;
-    const char* value = tabPos + 1;
-
-    strtrim(key);
-    strtrim(value);
-
-    addPair(key, value);
-    printf(key);
-    if (strcmp(key, "Checksum") == 0) {
-        commitFrame();
-        resetFrame();
-        is_charger_data_received = true;
-    }
-}
-
-bool try_extract_line(char* buffer, char* extracted_line) {
-    // Victron VE.Direct is backwards. Every line *starts* with a \n, not *ends*.
-    if (buffer[0] != '\n') {
-        goto error;
-    }
-
-    if (strlen(buffer) < 4) {
-        goto error;
-    }
-
-    // Trying to figure out if there is more than one line in the buffer.
-    char* next_newline = strchr(buffer + 1, '\n');
-    int number_of_bytes_to_copy = strlen(buffer);
-    if (next_newline != NULL) {
-        number_of_bytes_to_copy = next_newline - buffer;
-    }
-
-    // Found a line. Extracting. If it is not the last line, then we also need to append a null terminator.
-    strncpy(extracted_line, buffer, number_of_bytes_to_copy);
-    if (strlen(extracted_line) > number_of_bytes_to_copy) {
-        extracted_line[number_of_bytes_to_copy] = '\0';
-    }
-
-    // Condensing the input buffer (until it is no more).
-    if (next_newline != NULL) {
-        strcpy(buffer, next_newline);
-    }
-    else {
-        *buffer = '\0';
-    }
-
-    return true;
-
-error:
-    *extracted_line = '\0';
-    return false;
-}
-
-bool try_process_line(char* line, char* key, char* value) {
-    if (line == NULL) {
-        goto error;
-    }
-
-    char* tab_substring = strchr(line, '\t');
-
-    if (tab_substring == NULL) {
-        goto error;
-    }
-
-    int tab_position = tab_substring - line;
-
-    strncpy(key, line, tab_position);
-    key[tab_position] = '\0';
-
-    strcpy(value, tab_substring + 1);
-
-    strtrim(key);
-    strtrim(value);
-
-    return true;
-error:
-    *key = '\0';
-    *value = '\0';
-    return false;
-}
-
-
-static void addPair(const char* key, const char* value) {
-    if (pairCount >= MPPT_MAX_PAIRS) {
-        return;
-    }
-
-    copyString(keys[pairCount], sizeof(keys[pairCount]), key);
-    copyString(values[pairCount], sizeof(values[pairCount]), value);
-
-    pairCount++;
-}
-
-static void commitFrame(void) {
-    const char* fw = getValue("FW");
-
-    current_mppt_data.device_instance = 256;
-
-    copyString(current_mppt_data.product_id, sizeof(current_mppt_data.product_id),
-               getValue("PID"));
-
-    if (strlen(fw) >= 3) {
-        snprintf(current_mppt_data.firmware_version,
-                 sizeof(current_mppt_data.firmware_version), "%c.%.2s", fw[0], fw + 1);
-    }
-    else {
-        copyString(current_mppt_data.firmware_version,
-                   sizeof(current_mppt_data.firmware_version), fw);
-    }
-
-    copyString(current_mppt_data.serial_number, sizeof(current_mppt_data.serial_number),
-               getValue("SER#"));
-
-    copyString(current_mppt_data.state_text, sizeof(current_mppt_data.state_text),
-               mapState(getValue("CS")));
-
-    current_mppt_data.error_code = toIntSafe(getValue("ERR"), 0);
-    current_mppt_data.battery_voltage_v = to_scaled_float(getValue("V"), 1000.0f);
-    current_mppt_data.battery_current_a = to_scaled_float(getValue("I"), 1000.0f);
-    current_mppt_data.panel_voltage_v = to_scaled_float(getValue("VPV"), 1000.0f);
-    current_mppt_data.panel_power_w = toIntSafe(getValue("PPV"), 0);
-    current_mppt_data.yield_today_kwh = to_scaled_float(getValue("H20"), 100.0f);
-    current_mppt_data.yield_yesterday_kwh = to_scaled_float(getValue("H22"), 100.0f);
-    current_mppt_data.max_power_today_w = toIntSafe(getValue("H21"), 0);
-    current_mppt_data.max_power_yesterday_w = toIntSafe(getValue("H23"), 0);
-    current_mppt_data.yield_total_kwh = to_scaled_float(getValue("H19"), 100.0f);
-    current_mppt_data.day_sequence_number = toIntSafe(getValue("HSDS"), 0);
-    current_mppt_data.load_current_a = to_scaled_float(getValue("IL"), 1000.0f);
-    current_mppt_data.load_output_state = toIntSafe(getValue("LOAD"), 0) == 1;
-    current_mppt_data.charger_mode_id = toIntSafe(getValue("MPPT"), 0);
-    current_mppt_data.frame_valid = true;
-    current_mppt_data.last_update_ms = millis();
-}
-
-static const char* getValue(const char* key) {
-    for (int i = 0; i < pairCount; i++) {
-        if (strcmp(keys[i], key) == 0) {
-            return values[i];
-        }
-    }
-
-    return "";
-}
-
-static void resetFrame(void) {
-    pairCount = 0;
-
-    memset(keys, 0, sizeof(keys));
-    memset(values, 0, sizeof(values));
-}
 
 static const char* mapState(const char* cs) {
     if (strcmp(cs, "0") == 0) {
@@ -236,23 +51,42 @@ static int toIntSafe(const char* value, int fallback) {
     return (int)strtol(value, NULL, 10);
 }
 
-float to_scaled_float(const char* value, float scale) {
-    if (value == NULL || value[0] == '\0' || scale == 0.0f) {
-        return 0.0f;
+void post_rest_continuously_task(void* argument) {
+    const QueueHandle_t queue = argument;
+    mppt_data_t data_to_send;
+    const uint32_t server_ip = (172 << 24) | (16 << 16) | (7 << 8) | 1;
+    const uint16_t port = 8080;
+    static char body[512];
+
+    while (1) {
+        if (xQueueReceive(queue, &data_to_send, portMAX_DELAY) != pdPASS) { continue; }
+
+        snprintf(body, sizeof(body),
+                 "{"
+                 "\"product_id\":\"%s\","
+                 "\"firmware_version\":\"%s\","
+                 "\"serial_number\":\"%s\","
+                 "\"state_text\":\"%s\","
+                 "\"battery_voltage_v\":%.2f,"
+                 "\"battery_current_a\":%.2f,"
+                 "\"panel_voltage_v\":%.2f,"
+                 "\"panel_power_w\":%d,"
+                 "\"yield_today_kwh\":%.3f,"
+                 "\"load_current_a\":%.2f,"
+                 "\"load_output_state\":%s"
+                 "}",
+                 data_to_send.product_id,
+                 data_to_send.firmware_version,
+                 data_to_send.serial_number,
+                 data_to_send.state_text,
+                 data_to_send.battery_voltage_v,
+                 data_to_send.battery_current_a,
+                 data_to_send.panel_voltage_v,
+                 data_to_send.panel_power_w,
+                 data_to_send.yield_today_kwh,
+                 data_to_send.load_current_a,
+                 data_to_send.load_output_state ? "true" : "false");
+
+        rest_post(server_ip, port, "api", body, NULL, 0);
     }
-
-    return strtof(value, NULL) / scale;
-}
-
-static void copyString(char* dest, size_t destSize, const char* src) {
-    if (dest == NULL || destSize == 0) {
-        return;
-    }
-
-    if (src == NULL) {
-        dest[0] = '\0';
-        return;
-    }
-
-    snprintf(dest, destSize, "%s", src);
 }
