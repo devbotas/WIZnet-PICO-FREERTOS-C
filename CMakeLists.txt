@@ -18,6 +18,8 @@ if (NOT DEFINED PICO_SDK_PATH)
     message(STATUS "PICO_SDK_PATH = ${PICO_SDK_PATH}")
 endif ()
 
+set(PICO_DEOPTIMIZED_DEBUG 1)
+
 include(pico_sdk_import.cmake)
 include(wiznet_pico_freertos_c_sdk_version.cmake)
 
@@ -82,6 +84,7 @@ add_subdirectory(${PORT_DIR})
 # Set compile options
 add_compile_options(
         -O0
+        -fno-inline
         -Wall
         -Wno-format          # int != int32_t as far as the compiler is concerned because gcc has int32_t as long int
         -Wno-unused-function # we have some for the docs that aren't called
