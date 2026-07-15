@@ -14,7 +14,7 @@
 #define MPPT_KEY_MAX_LEN 16
 #define MPPT_VALUE_MAX_LEN 64
 
-mppt_data current_mppt_data = {0};
+mppt_data_t current_mppt_data = {0};
 QueueHandle_t received_mppt_datas = NULL;
 
 bool is_charger_data_received = false;
@@ -28,13 +28,13 @@ static const char* getValue(const char* key);
 static void resetFrame(void);
 static void commitFrame(void);
 static int toIntSafe(const char* value, int fallback);
-float toScaledFloat(const char* value, float scale);
+float to_scaled_float(const char* value, float scale);
 static const char* mapState(const char* cs);
 static void copyString(char* dest, size_t destSize, const char* src);
 
 static uint32_t millis(void) { return to_ms_since_boot(get_absolute_time()); }
 
-void processLine(char* line) {
+void process_line(char* line) {
     if (line == NULL) {
         return;
     }
@@ -150,42 +150,42 @@ static void addPair(const char* key, const char* value) {
 static void commitFrame(void) {
     const char* fw = getValue("FW");
 
-    current_mppt_data.deviceInstance = 256;
+    current_mppt_data.device_instance = 256;
 
-    copyString(current_mppt_data.productId, sizeof(current_mppt_data.productId),
+    copyString(current_mppt_data.product_id, sizeof(current_mppt_data.product_id),
                getValue("PID"));
 
     if (strlen(fw) >= 3) {
-        snprintf(current_mppt_data.firmwareVersion,
-                 sizeof(current_mppt_data.firmwareVersion), "%c.%.2s", fw[0], fw + 1);
+        snprintf(current_mppt_data.firmware_version,
+                 sizeof(current_mppt_data.firmware_version), "%c.%.2s", fw[0], fw + 1);
     }
     else {
-        copyString(current_mppt_data.firmwareVersion,
-                   sizeof(current_mppt_data.firmwareVersion), fw);
+        copyString(current_mppt_data.firmware_version,
+                   sizeof(current_mppt_data.firmware_version), fw);
     }
 
-    copyString(current_mppt_data.serialNumber, sizeof(current_mppt_data.serialNumber),
+    copyString(current_mppt_data.serial_number, sizeof(current_mppt_data.serial_number),
                getValue("SER#"));
 
-    copyString(current_mppt_data.stateText, sizeof(current_mppt_data.stateText),
+    copyString(current_mppt_data.state_text, sizeof(current_mppt_data.state_text),
                mapState(getValue("CS")));
 
-    current_mppt_data.errorCode = toIntSafe(getValue("ERR"), 0);
-    current_mppt_data.batteryVoltageV = toScaledFloat(getValue("V"), 1000.0f);
-    current_mppt_data.batteryCurrentA = toScaledFloat(getValue("I"), 1000.0f);
-    current_mppt_data.panelVoltageV = toScaledFloat(getValue("VPV"), 1000.0f);
-    current_mppt_data.panelPowerW = toIntSafe(getValue("PPV"), 0);
-    current_mppt_data.yieldTodayKWh = toScaledFloat(getValue("H20"), 100.0f);
-    current_mppt_data.yieldYesterdayKWh = toScaledFloat(getValue("H22"), 100.0f);
-    current_mppt_data.maxPowerTodayW = toIntSafe(getValue("H21"), 0);
-    current_mppt_data.maxPowerYesterdayW = toIntSafe(getValue("H23"), 0);
-    current_mppt_data.yieldTotalKWh = toScaledFloat(getValue("H19"), 100.0f);
-    current_mppt_data.daySequenceNumber = toIntSafe(getValue("HSDS"), 0);
-    current_mppt_data.loadCurrentA = toScaledFloat(getValue("IL"), 1000.0f);
-    current_mppt_data.loadOutputState = toIntSafe(getValue("LOAD"), 0) == 1;
-    current_mppt_data.chargerModeId = toIntSafe(getValue("MPPT"), 0);
-    current_mppt_data.frameValid = true;
-    current_mppt_data.lastUpdateMs = millis();
+    current_mppt_data.error_code = toIntSafe(getValue("ERR"), 0);
+    current_mppt_data.battery_voltage_v = to_scaled_float(getValue("V"), 1000.0f);
+    current_mppt_data.battery_current_a = to_scaled_float(getValue("I"), 1000.0f);
+    current_mppt_data.panel_voltage_v = to_scaled_float(getValue("VPV"), 1000.0f);
+    current_mppt_data.panel_power_w = toIntSafe(getValue("PPV"), 0);
+    current_mppt_data.yield_today_kwh = to_scaled_float(getValue("H20"), 100.0f);
+    current_mppt_data.yield_yesterday_kwh = to_scaled_float(getValue("H22"), 100.0f);
+    current_mppt_data.max_power_today_w = toIntSafe(getValue("H21"), 0);
+    current_mppt_data.max_power_yesterday_w = toIntSafe(getValue("H23"), 0);
+    current_mppt_data.yield_total_kwh = to_scaled_float(getValue("H19"), 100.0f);
+    current_mppt_data.day_sequence_number = toIntSafe(getValue("HSDS"), 0);
+    current_mppt_data.load_current_a = to_scaled_float(getValue("IL"), 1000.0f);
+    current_mppt_data.load_output_state = toIntSafe(getValue("LOAD"), 0) == 1;
+    current_mppt_data.charger_mode_id = toIntSafe(getValue("MPPT"), 0);
+    current_mppt_data.frame_valid = true;
+    current_mppt_data.last_update_ms = millis();
 }
 
 static const char* getValue(const char* key) {
@@ -236,7 +236,7 @@ static int toIntSafe(const char* value, int fallback) {
     return (int)strtol(value, NULL, 10);
 }
 
-float toScaledFloat(const char* value, float scale) {
+float to_scaled_float(const char* value, float scale) {
     if (value == NULL || value[0] == '\0' || scale == 0.0f) {
         return 0.0f;
     }

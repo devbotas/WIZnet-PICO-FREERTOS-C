@@ -11,35 +11,35 @@
 #define MPPT_STATE_TEXT_MAX_LEN       32
 
 typedef struct {
-    char productId[MPPT_PRODUCT_ID_MAX_LEN];
-    char firmwareVersion[MPPT_FIRMWARE_VERSION_MAX_LEN];
-    char serialNumber[MPPT_SERIAL_NUMBER_MAX_LEN];
-    char stateText[MPPT_STATE_TEXT_MAX_LEN];
+    char product_id[MPPT_PRODUCT_ID_MAX_LEN];
+    char firmware_version[MPPT_FIRMWARE_VERSION_MAX_LEN];
+    char serial_number[MPPT_SERIAL_NUMBER_MAX_LEN];
+    char state_text[MPPT_STATE_TEXT_MAX_LEN];
 
-    int deviceInstance;
-    int errorCode;
-    float batteryVoltageV;
-    float batteryCurrentA;
-    float panelVoltageV;
-    int panelPowerW;
-    float yieldTodayKWh;
-    float yieldYesterdayKWh;
-    int maxPowerTodayW;
-    int maxPowerYesterdayW;
-    float yieldTotalKWh;
-    int daySequenceNumber;
-    float loadCurrentA;
-    bool loadOutputState;
-    int chargerModeId;
-    bool frameValid;
-    uint32_t lastUpdateMs;
-} mppt_data;
+    int device_instance;
+    int error_code;
+    float battery_voltage_v;
+    float battery_current_a;
+    float panel_voltage_v;
+    int panel_power_w;
+    float yield_today_kwh;
+    float yield_yesterday_kwh;
+    int max_power_today_w;
+    int max_power_yesterday_w;
+    float yield_total_kwh;
+    int day_sequence_number;
+    float load_current_a;
+    bool load_output_state;
+    int charger_mode_id;
+    bool frame_valid;
+    uint32_t last_update_ms;
+} mppt_data_t;
 
-extern mppt_data current_mppt_data;
+extern mppt_data_t current_mppt_data;
 extern bool is_charger_data_received;
 extern QueueHandle_t received_mppt_datas;
 
-void processLine(char* line);
+void process_line(char* line);
 bool try_process_line(char* line, char* key, char* value);
 bool try_extract_line(char* buffer, char* extracted_line);
-float toScaledFloat(const char* value, float scale);
+float to_scaled_float(const char* value, float scale);

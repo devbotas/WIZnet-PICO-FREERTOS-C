@@ -59,99 +59,99 @@ void run_serial_pio_monitor_task(void* argument) {
 
                         char sent_checksum_value = value[0];
 
-                        mppt_data new_data = {0};
+                        mppt_data_t new_data = {0};
                         while (try_extract_line(frame, bybiline)) {
                             if (try_process_line(bybiline, key, value) == false) {
                                 continue;
                             }
 
                             if (strcmp(key, "PID") == 0) {
-                                snprintf(new_data.productId, sizeof(new_data.productId), "%s", value);
+                                snprintf(new_data.product_id, sizeof(new_data.product_id), "%s", value);
                             }
                             else if (strcmp(key, "FW") == 0) {
                                 if (strlen(value) >= 3) {
-                                    snprintf(new_data.firmwareVersion, sizeof(new_data.firmwareVersion), "%c.%.2s",
+                                    snprintf(new_data.firmware_version, sizeof(new_data.firmware_version), "%c.%.2s",
                                              value[0], value + 1);
                                 }
                                 else {
-                                    snprintf(new_data.firmwareVersion, sizeof(new_data.firmwareVersion), "%s", value);
+                                    snprintf(new_data.firmware_version, sizeof(new_data.firmware_version), "%s", value);
                                 }
                             }
                             else if (strcmp(key, "SER#") == 0) {
-                                snprintf(new_data.serialNumber, sizeof(new_data.serialNumber), "%s", value);
+                                snprintf(new_data.serial_number, sizeof(new_data.serial_number), "%s", value);
                             }
                             else if (strcmp(key, "V") == 0) {
-                                new_data.batteryVoltageV = toScaledFloat(value, 1000.0f);
+                                new_data.battery_voltage_v = to_scaled_float(value, 1000.0f);
                             }
                             else if (strcmp(key, "I") == 0) {
-                                new_data.batteryCurrentA = toScaledFloat(value, 1000.0f);
+                                new_data.battery_current_a = to_scaled_float(value, 1000.0f);
                             }
                             else if (strcmp(key, "VPV") == 0) {
-                                new_data.panelVoltageV = toScaledFloat(value, 1000.0f);
+                                new_data.panel_voltage_v = to_scaled_float(value, 1000.0f);
                             }
                             else if (strcmp(key, "PPV") == 0) {
-                                new_data.panelPowerW = (int)strtol(value, NULL, 10);
+                                new_data.panel_power_w = (int)strtol(value, NULL, 10);
                             }
                             else if (strcmp(key, "CS") == 0) {
                                 // For simplicity here, we could add a mapState helper to a shared header if needed,
                                 // but for now let's just copy what mppt.c does or keep it simple.
                                 // Actually, we should probably use the same mapping.
                                 if (strcmp(value, "0") == 0)
-                                    snprintf(new_data.stateText, sizeof(new_data.stateText),
+                                    snprintf(new_data.state_text, sizeof(new_data.state_text),
                                              "Off");
                                 else if (strcmp(value, "2") == 0)
                                     snprintf(
-                                        new_data.stateText, sizeof(new_data.stateText), "Fault");
+                                        new_data.state_text, sizeof(new_data.state_text), "Fault");
                                 else if (strcmp(value, "3") == 0)
                                     snprintf(
-                                        new_data.stateText, sizeof(new_data.stateText), "Bulk");
+                                        new_data.state_text, sizeof(new_data.state_text), "Bulk");
                                 else if (strcmp(value, "4") == 0)
                                     snprintf(
-                                        new_data.stateText, sizeof(new_data.stateText), "Absorption");
+                                        new_data.state_text, sizeof(new_data.state_text), "Absorption");
                                 else if (strcmp(value, "5") == 0)
                                     snprintf(
-                                        new_data.stateText, sizeof(new_data.stateText), "Float");
+                                        new_data.state_text, sizeof(new_data.state_text), "Float");
                                 else if (strcmp(value, "7") == 0)
                                     snprintf(
-                                        new_data.stateText, sizeof(new_data.stateText), "Equalize");
-                                else snprintf(new_data.stateText, sizeof(new_data.stateText), "%s", value);
+                                        new_data.state_text, sizeof(new_data.state_text), "Equalize");
+                                else snprintf(new_data.state_text, sizeof(new_data.state_text), "%s", value);
                             }
                             else if (strcmp(key, "ERR") == 0) {
-                                new_data.errorCode = (int)strtol(value, NULL, 10);
+                                new_data.error_code = (int)strtol(value, NULL, 10);
                             }
                             else if (strcmp(key, "H20") == 0) {
-                                new_data.yieldTodayKWh = toScaledFloat(value, 100.0f);
+                                new_data.yield_today_kwh = to_scaled_float(value, 100.0f);
                             }
                             else if (strcmp(key, "H22") == 0) {
-                                new_data.yieldYesterdayKWh = toScaledFloat(value, 100.0f);
+                                new_data.yield_yesterday_kwh = to_scaled_float(value, 100.0f);
                             }
                             else if (strcmp(key, "H21") == 0) {
-                                new_data.maxPowerTodayW = (int)strtol(value, NULL, 10);
+                                new_data.max_power_today_w = (int)strtol(value, NULL, 10);
                             }
                             else if (strcmp(key, "H23") == 0) {
-                                new_data.maxPowerYesterdayW = (int)strtol(value, NULL, 10);
+                                new_data.max_power_yesterday_w = (int)strtol(value, NULL, 10);
                             }
                             else if (strcmp(key, "H19") == 0) {
-                                new_data.yieldTotalKWh = toScaledFloat(value, 100.0f);
+                                new_data.yield_total_kwh = to_scaled_float(value, 100.0f);
                             }
                             else if (strcmp(key, "HSDS") == 0) {
-                                new_data.daySequenceNumber = (int)strtol(value, NULL, 10);
+                                new_data.day_sequence_number = (int)strtol(value, NULL, 10);
                             }
                             else if (strcmp(key, "IL") == 0) {
-                                new_data.loadCurrentA = toScaledFloat(value, 1000.0f);
+                                new_data.load_current_a = to_scaled_float(value, 1000.0f);
                             }
                             else if (strcmp(key, "LOAD") == 0) {
-                                new_data.loadOutputState = strcmp(value, "ON") == 0 || strcmp(value, "1") == 0;
+                                new_data.load_output_state = strcmp(value, "ON") == 0 || strcmp(value, "1") == 0;
                             }
                             else if (strcmp(key, "MPPT") == 0) {
-                                new_data.chargerModeId = (int)strtol(value, NULL, 10);
+                                new_data.charger_mode_id = (int)strtol(value, NULL, 10);
                             }
 
                             printf("Key: %s, value: %s\n", key, value);
                         }
-                        new_data.deviceInstance = 256;
-                        new_data.frameValid = true;
-                        new_data.lastUpdateMs = to_ms_since_boot(get_absolute_time());
+                        new_data.device_instance = 256;
+                        new_data.frame_valid = true;
+                        new_data.last_update_ms = to_ms_since_boot(get_absolute_time());
 
                         if (actual_checksum_value == sent_checksum_value) {
                             printf("pyzda!\n");

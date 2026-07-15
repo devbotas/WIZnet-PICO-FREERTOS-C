@@ -22,7 +22,7 @@ int main() {
 
     network_init();
 
-    received_mppt_datas = xQueueCreate(10, sizeof(mppt_data));
+    received_mppt_datas = xQueueCreate(10, sizeof(mppt_data_t));
 
     xTaskCreate(get_ipi_from_dhcp_task, "DHCP", 2048, NULL, 8, NULL);
     xTaskCreate(blinker_task, "blinker", 256, NULL, 1, NULL);
