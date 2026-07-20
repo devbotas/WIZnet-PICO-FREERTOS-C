@@ -6,6 +6,7 @@
 #include "wizchip_spi.h"
 #include <stdio.h>
 #include "dhcp.h"
+#include "hardware/gpio.h"
 
 void get_ipi_from_dhcp_task(void* argument) {
     int retval = 0;
@@ -13,11 +14,16 @@ void get_ipi_from_dhcp_task(void* argument) {
     uint16_t len = 0;
     uint32_t dhcp_retry = 0;
 
+    int ip_blinker_gpio = 2;
+    gpio_init(ip_blinker_gpio);
+    gpio_set_dir(ip_blinker_gpio, GPIO_OUT);
+
+
     if (network_information.dhcp == NETINFO_DHCP) {
         initialize_dhcp();
     }
-    else // static
-    {
+    else {
+        // static
         network_initialize(network_information);
 
         /* Get network information */
@@ -32,6 +38,7 @@ void get_ipi_from_dhcp_task(void* argument) {
         link = wizphy_getphylink();
 
         if (link == PHY_LINK_OFF) {
+            gpio_put(ip_blinker_gpio,false);
             printf("PHY_LINK_OFF\n");
 
             DHCP_stop();
@@ -57,6 +64,7 @@ void get_ipi_from_dhcp_task(void* argument) {
             if (g_dhcp_get_ip_flag == 0) {
                 dhcp_retry = 0;
 
+                gpio_put(ip_blinker_gpio,true);
                 printf(" DHCP success\n");
 
                 g_dhcp_get_ip_flag = 1;
